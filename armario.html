@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0A0A0A">
-<meta name="version" content="v1.0">
+<meta name="version" content="v1.1">
 <title>Mi Armario</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Mi Armario v1.0 -->
+<!-- Mi Armario v1.1 -->
 <style>
   :root {
     --bg: #0A0A0A;
@@ -170,6 +170,22 @@
   .menu-item.danger b { color: var(--danger); }
 
   .toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 90; background: var(--surface-2); border: 1px solid var(--line); padding: 10px 16px; border-radius: 100px; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.5); animation: up .2s ease; max-width: calc(100% - 32px); }
+  /* ---------- Combinador ---------- */
+  #editModal { z-index: 60; }
+  .head-actions { display: flex; gap: 8px; align-items: center; }
+  .pill { height: 40px; padding: 0 14px; border-radius: 12px; background: var(--accent-soft); border: 1px solid var(--accent); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .mix-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .arrow { width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); font-size: 20px; line-height: 1; }
+  .mix-slot { flex: 1; min-width: 0; position: relative; height: 190px; border-radius: 14px; background: #F4F1EC; overflow: hidden; display: grid; place-items: center; touch-action: pan-y; user-select: none; }
+  .mix-slot.sm { height: 120px; }
+  .mix-slot img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  .mix-slot.none { background: var(--surface); border: 1.5px dashed #3a3632; color: var(--text-soft); font-size: 13px; }
+  .mix-slot .lab { position: absolute; top: 6px; left: 8px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; background: rgba(0,0,0,.65); color: #fff; padding: 2px 8px; border-radius: 100px; }
+  .mix-slot .nm { position: absolute; bottom: 6px; left: 8px; right: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.6); padding: 2px 8px; border-radius: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+  .mix-slot .lock { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.6); font-size: 14px; }
+  .mix-slot .lock.on { background: var(--accent); }
+  .mix-total { text-align: center; font-size: 15px; margin-top: 12px; color: var(--text-soft); }
+  .mix-total b { color: var(--text); }
   .version { text-align: center; font-size: 12px; color: #4a4642; margin-top: 30px; }
 </style>
 </head>
@@ -178,9 +194,12 @@
 <header>
   <div class="top">
     <h1>Mi <span>Armario</span></h1>
+    <div class="head-actions">
+    <button class="pill" id="mixBtn">👕 Combinar</button>
     <button class="icon-btn" id="menuBtn" aria-label="Menú">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
     </button>
+    </div>
   </div>
   <div class="controls">
     <div class="search">
@@ -207,7 +226,7 @@
 <main>
   <div class="grid" id="grid"></div>
   <div class="empty hidden" id="empty"></div>
-  <p class="version">Mi Armario · v1.0</p>
+  <p class="version">Mi Armario · v1.1</p>
 </main>
 
 <button class="fab" id="addBtn">
@@ -306,6 +325,24 @@
   <div class="sheet" id="viewBody"></div>
 </div>
 
+<!-- Combinador -->
+<div class="modal hidden" id="mixModal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Combinar</h2>
+      <button class="icon-btn" data-close aria-label="Cerrar">✕</button>
+    </div>
+    <p class="hint" style="margin:-8px 0 10px">Deslizá o usá las flechas para cambiar cada prenda. Con 🔒 la dejás fija cuando sorteás.</p>
+    <div id="mixRows"></div>
+    <label class="toggle"><input type="checkbox" id="mixWish" checked> Incluir prendas que quiero (wishlist)</label>
+    <p class="mix-total" id="mixTotal"></p>
+    <div class="actions">
+      <button class="btn" id="mixRand">🎲 Sortear</button>
+      <button class="btn primary" id="mixSave">Guardar outfit</button>
+    </div>
+  </div>
+</div>
+
 <!-- Menú -->
 <div class="modal hidden" id="menuModal">
   <div class="sheet">
@@ -319,7 +356,7 @@
     <button class="menu-item danger" id="wipeBtn"><b>Borrar todo</b><small>Elimina todas las prendas y outfits de este dispositivo</small></button>
     <p class="hint" id="storageInfo"></p>
     <p class="hint">Tus datos se guardan solo en este navegador. Descargá una copia de vez en cuando para no perderlos.</p>
-    <p class="version">Mi Armario · v1.0</p>
+    <p class="version">Mi Armario · v1.1</p>
   </div>
 </div>
 
@@ -328,7 +365,7 @@
 <script>
 (() => {
   'use strict';
-  const APP_VERSION = 'v1.0';
+  const APP_VERSION = 'v1.1';
 
   const CATS = {
     prenda: ['Remeras', 'Camisas', 'Buzos y sweaters', 'Camperas y abrigos', 'Pantalones', 'Shorts', 'Faldas', 'Vestidos', 'Calzado', 'Accesorios', 'Bolsos', 'Ropa interior', 'Deportiva', 'Otros'],
@@ -581,7 +618,7 @@
       </button>`).join('');
   }
 
-  function openEditor(item, presetImages) {
+  function openEditor(item, presetImages, preset) {
     const isNew = !item;
     draft = item ? JSON.parse(JSON.stringify(item)) : {
       id: uid(), type: filt.type === 'outfit' ? 'outfit' : 'prenda', name: '', category: '', brand: '', store: '',
@@ -589,6 +626,7 @@
       fav: false, tags: [], notes: '', images: [], pieces: [], createdAt: Date.now()
     };
     draft.pieces = draft.pieces || [];
+    if (preset) Object.assign(draft, preset);
     if (presetImages) draft.images.push(...presetImages);
     $('#editTitle').textContent = isNew ? 'Nuevo' : 'Editar';
     $('#eName').value = draft.name;
@@ -684,6 +722,7 @@
     const idx = items.findIndex(i => i.id === item.id);
     idx >= 0 ? items[idx] = item : items.push(item);
     close($('#editModal'));
+    close($('#mixModal'));
     if (!$('#viewModal').classList.contains('hidden')) openView(item.id);
     render();
     toast('Guardado ✓');
@@ -740,6 +779,7 @@
         <span class="badge ${i.status}">${i.status === 'tengo' ? 'Lo tengo' : 'Lo quiero'}</span>
         ${(i.tags || []).map(t => `<span class="badge">#${esc(t)}</span>`).join('')}
       </div>
+      ${i.type === 'prenda' ? `<button class="btn primary" style="width:100%;margin-top:14px" data-mix="${i.id}">👕 Combinar esta prenda</button>` : ''}
       ${i.links?.length ? `<div class="links">${i.links.map(l => `<a class="link-a" href="${esc(l)}" target="_blank" rel="noopener noreferrer"><span>${esc(host(l))}</span>${extIcon}</a>`).join('')}</div>` : ''}
       ${i.notes ? `<p class="notes">${esc(i.notes)}</p>` : ''}
       ${pieces.length ? `<p class="sec-title">Prendas del outfit</p>${miniGrid(pieces)}` : ''}
@@ -751,6 +791,8 @@
   $('#viewBody').addEventListener('click', async e => {
     const ed = e.target.closest('[data-edit]');
     if (ed) return openEditor(byId(ed.dataset.edit));
+    const mx = e.target.closest('[data-mix]');
+    if (mx) return openMixer(mx.dataset.mix);
     const op = e.target.closest('[data-open]');
     if (op) return openView(op.dataset.open);
     const fv = e.target.closest('[data-togglefav]');
@@ -767,6 +809,144 @@
     }
   });
   $('#lightbox').addEventListener('click', () => $('#lightbox').classList.add('hidden'));
+
+  // ---------- Combinador ----------
+  const ZONES = [
+    { key: 'arriba', label: 'Arriba', re: /remera|camis|buzo|sweater|top|musculosa|vestido|chomba|blusa|polera|body|cardigan/i },
+    { key: 'abrigo', label: 'Abrigo', re: /campera|abrigo|tapado|saco|blazer|chaleco|parka|piloto/i },
+    { key: 'abajo', label: 'Abajo', re: /pantal|short|falda|pollera|jean|bermuda|\bcalzas?\b|jogger/i },
+    { key: 'calzado', label: 'Calzado', re: /calzado|zapat|zapa|bota|sandal|ojota|mocas/i },
+    { key: 'acc', label: 'Accesorios', re: /acces|bolso|cartera|gorr|lente|anteojo|cint|reloj|joya|mochila|bufanda|collar|aro/i },
+    { key: 'otros', label: 'Otros', re: /$^/ }
+  ];
+  const OPTIONAL = new Set(['abrigo', 'acc', 'otros']);
+  const SMALL = new Set(['calzado', 'acc', 'otros']);
+  const mix = { sel: {}, lock: {}, wish: true };
+
+  function zoneOf(it) {
+    for (const z of ZONES) if (z.re.test(it.category || '')) return z.key;
+    for (const z of ZONES) if (z.re.test(it.name || '')) return z.key;
+    return 'otros';
+  }
+  const mixPool = k => items.filter(i => i.type === 'prenda' && zoneOf(i) === k && (mix.wish || i.status === 'tengo'));
+  const mixChosen = () => ZONES.map(z => ({ key: z.key, it: byId(mix.sel[z.key]) })).filter(x => x.it && mixPool(x.key).includes(x.it));
+
+  function openMixer(focusId) {
+    if (!items.some(i => i.type === 'prenda')) return toast('Primero cargá algunas prendas');
+    mix.sel = {}; mix.lock = {};
+    for (const z of ZONES) {
+      const pool = mixPool(z.key);
+      mix.sel[z.key] = !OPTIONAL.has(z.key) && pool.length ? pool[0].id : null;
+    }
+    const f = focusId && byId(focusId);
+    if (f) {
+      if (f.status === 'quiero') { mix.wish = true; $('#mixWish').checked = true; }
+      const k = zoneOf(f);
+      mix.sel[k] = f.id; mix.lock[k] = true;
+    }
+    renderMixer();
+    open('#mixModal');
+  }
+
+  function renderMixer() {
+    $('#mixRows').innerHTML = ZONES.filter(z => mixPool(z.key).length).map(z => {
+      const it = byId(mix.sel[z.key]);
+      const ok = it && mixPool(z.key).includes(it);
+      const sm = SMALL.has(z.key) ? 'sm' : '';
+      return `<div class="mix-row">
+        <button class="arrow" data-step="-1" data-k="${z.key}" aria-label="Anterior">‹</button>
+        <div class="mix-slot ${sm} ${ok ? '' : 'none'}" data-k="${z.key}">
+          ${ok ? (it.images?.[0] ? `<img src="${it.images[0]}" alt="">` : '') + `<span class="nm">${esc(it.name || 'Sin nombre')}</span>` : 'Ninguno'}
+          <span class="lab">${z.label}</span>
+          ${ok ? `<button class="lock ${mix.lock[z.key] ? 'on' : ''}" data-lock="${z.key}" aria-label="Fijar">${mix.lock[z.key] ? '🔒' : '🔓'}</button>` : ''}
+        </div>
+        <button class="arrow" data-step="1" data-k="${z.key}" aria-label="Siguiente">›</button>
+      </div>`;
+    }).join('');
+    const tot = {};
+    mixChosen().forEach(({ it }) => { if (it.price != null) tot[it.currency] = (tot[it.currency] || 0) + it.price; });
+    const t = Object.entries(tot).map(([c, v]) => fmt(v, c)).join(' + ');
+    const wishCount = mixChosen().filter(x => x.it.status === 'quiero').length;
+    $('#mixTotal').innerHTML = (t ? `Total del look: <b>${t}</b>` : '') + (wishCount ? `<br>${wishCount} prenda${wishCount > 1 ? 's' : ''} de tu wishlist` : '');
+  }
+
+  function mixStep(k, d) {
+    const pool = mixPool(k);
+    const ids = [null, ...pool.map(p => p.id)];
+    let i = ids.indexOf(mix.sel[k] && pool.some(p => p.id === mix.sel[k]) ? mix.sel[k] : null);
+    i = (i + d + ids.length) % ids.length;
+    mix.sel[k] = ids[i];
+    mix.lock[k] = false;
+    renderMixer();
+  }
+
+  $('#mixRows').addEventListener('click', e => {
+    const l = e.target.closest('[data-lock]');
+    if (l) { mix.lock[l.dataset.lock] = !mix.lock[l.dataset.lock]; return renderMixer(); }
+    const s = e.target.closest('[data-step]');
+    if (s) mixStep(s.dataset.k, +s.dataset.step);
+  });
+  let swipe = null;
+  $('#mixRows').addEventListener('pointerdown', e => {
+    const s = e.target.closest('.mix-slot');
+    if (s && !e.target.closest('[data-lock]')) swipe = { k: s.dataset.k, x: e.clientX };
+  });
+  window.addEventListener('pointerup', e => {
+    if (!swipe) return;
+    const dx = e.clientX - swipe.x;
+    if (Math.abs(dx) > 40) mixStep(swipe.k, dx < 0 ? 1 : -1);
+    swipe = null;
+  });
+  $('#mixWish').addEventListener('change', e => { mix.wish = e.target.checked; renderMixer(); });
+
+  $('#mixRand').addEventListener('click', () => {
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    for (const z of ZONES) {
+      if (mix.lock[z.key]) continue;
+      const pool = mixPool(z.key);
+      if (!pool.length) continue;
+      mix.sel[z.key] = OPTIONAL.has(z.key) && Math.random() < 0.5 ? null : pick(pool).id;
+    }
+    renderMixer();
+  });
+
+  function loadImg(src) {
+    return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+  }
+  // Arma una imagen con todas las prendas una debajo de otra
+  async function composeLook(list) {
+    const rows = list.filter(x => x.it.images?.[0]).map(x => ({ src: x.it.images[0], h: SMALL.has(x.key) ? 300 : 520 }));
+    if (!rows.length) return null;
+    const W = 900, pad = 30, gap = 16;
+    const H = pad * 2 + rows.reduce((a, r) => a + r.h, 0) + gap * (rows.length - 1);
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#F4F1EC'; ctx.fillRect(0, 0, W, H);
+    let y = pad;
+    for (const r of rows) {
+      try {
+        const im = await loadImg(r.src);
+        const k = Math.min((W - pad * 2) / im.width, r.h / im.height);
+        const dw = im.width * k, dh = im.height * k;
+        ctx.drawImage(im, (W - dw) / 2, y + (r.h - dh) / 2, dw, dh);
+      } catch {}
+      y += r.h + gap;
+    }
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+
+  $('#mixSave').addEventListener('click', async () => {
+    const chosen = mixChosen();
+    if (!chosen.length) return toast('Elegí al menos una prenda');
+    const img = await composeLook(chosen);
+    openEditor(null, img ? [img] : [], {
+      type: 'outfit',
+      pieces: chosen.map(x => x.it.id),
+      status: chosen.some(x => x.it.status === 'quiero') ? 'quiero' : 'tengo'
+    });
+  });
+  $('#mixBtn').addEventListener('click', () => openMixer());
 
   // ---------- Lista: eventos ----------
   $('#grid').addEventListener('click', e => { const c = e.target.closest('.card'); if (c) openView(c.dataset.id); });
